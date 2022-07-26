@@ -787,18 +787,25 @@ static void build_cmdline_str(char **cmdlinep, exarg_T *eap, CmdParseInfo *cmdin
   eap->argc = argc;
   eap->arglens = xcalloc(argc, sizeof(size_t));
   eap->args = xcalloc(argc, sizeof(char *));
-  eap->cmd = cmdline.items + cmdname_idx;
 
+  size_t offset = cmdline.size;
   for (size_t i = 0; i < argc; i++) {
     String s = args.items[i].data.string;
     kv_concat(cmdline, " ");
-    eap->args[i] = cmdline.items + cmdline.size;
-    eap->arglens[i] = s.size;
     kv_concat_len(cmdline, s.data, s.size);
   }
 
   // Done appending to cmdline, ensure it is NUL terminated
   kv_push(cmdline, NUL);
+
+  eap->cmd = cmdline.items + cmdname_idx;
+  for (size_t i = 0; i < argc; i++) {
+    String s = args.items[i].data.string;
+    offset++; // kv_concat(cmdline, " ");
+    eap->args[i] = cmdline.items + offset;
+    eap->arglens[i] = s.size;
+    offset += s.size; // kv_concat_len(cmdline, s.data, s.size);
+  }
 
   // If there isn't an argument, make eap->arg point to end of cmdline.
   eap->arg = argc > 0 ? eap->args[0] : cmdline.items + cmdline.size;
