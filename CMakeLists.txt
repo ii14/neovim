@@ -5,7 +5,7 @@
 
 # Version should match the tested CMAKE_URL in .github/workflows/ci.yml.
 cmake_minimum_required(VERSION 3.10)
-project(nvim C)
+project(nvim C CXX)
 
 if(POLICY CMP0075)
   cmake_policy(SET CMP0075 NEW)

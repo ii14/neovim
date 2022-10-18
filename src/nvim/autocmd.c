@@ -904,10 +904,10 @@ void do_autocmd(char *arg_in, int forceit)
   xfree(envpat);
 }
 
-void do_all_autocmd_events(char *pat, bool once, int nested, char *cmd, bool delete, int group)
+void do_all_autocmd_events(char *pat, bool once, int nested, char *cmd, bool delete_, int group)
 {
   FOR_ALL_AUEVENTS(event) {
-    if (do_autocmd_event(event, pat, once, nested, cmd, delete, group)
+    if (do_autocmd_event(event, pat, once, nested, cmd, delete_, group)
         == FAIL) {
       return;
     }
@@ -921,12 +921,12 @@ void do_all_autocmd_events(char *pat, bool once, int nested, char *cmd, bool del
 // If *cmd == NUL: show entries.
 // If forceit == true: delete entries.
 // If group is not AUGROUP_ALL: only use this group.
-int do_autocmd_event(event_T event, char *pat, bool once, int nested, char *cmd, bool delete,
+int do_autocmd_event(event_T event, char *pat, bool once, int nested, char *cmd, bool delete_,
                      int group)
   FUNC_ATTR_NONNULL_ALL
 {
   // Cannot be used to show all patterns. See au_show_for_event or au_show_for_all_events
-  assert(*pat != NUL || delete);
+  assert(*pat != NUL || delete_);
 
   AutoPat *ap;
   AutoPat **prev_ap;
@@ -943,7 +943,7 @@ int do_autocmd_event(event_T event, char *pat, bool once, int nested, char *cmd,
   }
 
   // Delete all aupat for an event.
-  if (*pat == NUL && delete) {
+  if (*pat == NUL && delete_) {
     aupat_del_for_event_and_group(event, findgroup);
     return OK;
   }
@@ -964,7 +964,7 @@ int do_autocmd_event(event_T event, char *pat, bool once, int nested, char *cmd,
       patlen = (int)strlen(buflocal_pat);
     }
 
-    if (delete) {
+    if (delete_) {
       assert(*pat != NUL);
 
       // Find AutoPat entries with this pattern.

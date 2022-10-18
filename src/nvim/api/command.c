@@ -985,7 +985,7 @@ void create_user_command(String name, Object command, Dict(user_command) *opts, 
   uint32_t argt = 0;
   long def = -1;
   cmd_addr_T addr_type_arg = ADDR_NONE;
-  int compl = EXPAND_NOTHING;
+  int compl_ = EXPAND_NOTHING;
   char *compl_arg = NULL;
   const char *rep = NULL;
   LuaRef luaref = LUA_NOREF;
@@ -1131,11 +1131,11 @@ void create_user_command(String name, Object command, Dict(user_command) *opts, 
   }
 
   if (opts->complete.type == kObjectTypeLuaRef) {
-    compl = EXPAND_USER_LUA;
+    compl_ = EXPAND_USER_LUA;
     compl_luaref = api_new_luaref(opts->complete.data.luaref);
   } else if (opts->complete.type == kObjectTypeString) {
     if (parse_compl_arg(opts->complete.data.string.data,
-                        (int)opts->complete.data.string.size, &compl, &argt,
+                        (int)opts->complete.data.string.size, &compl_, &argt,
                         &compl_arg) != OK) {
       api_set_error(err, kErrorTypeValidation, "Invalid value for 'complete'");
       goto err;
@@ -1170,7 +1170,7 @@ void create_user_command(String name, Object command, Dict(user_command) *opts, 
     goto err;
   }
 
-  if (uc_add_command(name.data, name.size, rep, argt, def, flags, compl, compl_arg, compl_luaref,
+  if (uc_add_command(name.data, name.size, rep, argt, def, flags, compl_, compl_arg, compl_luaref,
                      preview_luaref, addr_type_arg, luaref, force) != OK) {
     api_set_error(err, kErrorTypeException, "Failed to create user command");
     // Do not goto err, since uc_add_command now owns luaref, compl_luaref, and compl_arg

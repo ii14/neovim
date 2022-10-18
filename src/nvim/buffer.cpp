@@ -19,6 +19,10 @@
 // The current implementation remembers all file names ever used.
 //
 
+using _Bool = bool;
+#define restrict
+
+extern "C" {
 #include <assert.h>
 #include <inttypes.h>
 #include <stdbool.h>
@@ -91,9 +95,10 @@
 #ifdef INCLUDE_GENERATED_DECLARATIONS
 # include "buffer.c.generated.h"
 #endif
+}
 
-static char *e_auabort = N_("E855: Autocommands caused command to abort");
-static char *e_buflocked = N_("E937: Attempt to delete a buffer that is in use");
+static const char *e_auabort = N_("E855: Autocommands caused command to abort");
+static const char *e_buflocked = N_("E937: Attempt to delete a buffer that is in use");
 
 // Number of times free_buffer() was called.
 static int buf_free_count = 0;
@@ -1681,15 +1686,12 @@ static inline void buf_init_changedtick(buf_T *const buf)
 {
   STATIC_ASSERT(sizeof("changedtick") <= sizeof(buf->changedtick_di.di_key),
                 "buf->changedtick_di cannot hold large enough keys");
-  buf->changedtick_di = (ChangedtickDictItem) {
-    .di_flags = DI_FLAGS_RO|DI_FLAGS_FIX,  // Must not include DI_FLAGS_ALLOC.
-    .di_tv = (typval_T) {
-      .v_type = VAR_NUMBER,
-      .v_lock = VAR_FIXED,
-      .vval.v_number = buf_get_changedtick(buf),
-    },
-    .di_key = "changedtick",
-  };
+  buf->changedtick_di = {};
+  buf->changedtick_di.di_flags = DI_FLAGS_RO|DI_FLAGS_FIX;  // Must not include DI_FLAGS_ALLOC.
+  buf->changedtick_di.di_tv.v_type = VAR_NUMBER;
+  buf->changedtick_di.di_tv.v_lock = VAR_FIXED;
+  buf->changedtick_di.di_tv.vval.v_number = buf_get_changedtick(buf);
+  memcpy(&buf->changedtick_di.di_key, "changedtick", sizeof("changedtick"));
   tv_dict_add(buf->b_vars, (dictitem_T *)&buf->changedtick_di);
 }
 
@@ -1772,7 +1774,7 @@ buf_T *buflist_new(char *ffname_arg, char *sfname_arg, linenr_T lnum, int flags)
     }
   }
   if (buf != curbuf || curbuf == NULL) {
-    buf = xcalloc(1, sizeof(buf_T));
+    buf = (buf_T *)xcalloc(1, sizeof(buf_T));
     // init b: variables
     buf->b_vars = tv_dict_alloc();
     buf->b_signcols.valid = false;
@@ -1786,7 +1788,7 @@ buf_T *buflist_new(char *ffname_arg, char *sfname_arg, linenr_T lnum, int flags)
   }
 
   clear_wininfo(buf);
-  buf->b_wininfo = xcalloc(1, sizeof(wininfo_T));
+  buf->b_wininfo = (wininfo_T *)xcalloc(1, sizeof(wininfo_T));
 
   if (buf == curbuf) {
     free_buffer_stuff(buf, kBffInitChangedtick);  // delete local vars et al.
@@ -1824,7 +1826,7 @@ buf_T *buflist_new(char *ffname_arg, char *sfname_arg, linenr_T lnum, int flags)
     buf_copy_options(buf, BCO_ALWAYS);
   }
 
-  buf->b_wininfo->wi_mark = (fmark_T)INIT_FMARK;
+  buf->b_wininfo->wi_mark = INIT_FMARK;
   buf->b_wininfo->wi_mark.mark.lnum = lnum;
   buf->b_wininfo->wi_win = curwin;
 
@@ -2284,7 +2286,7 @@ int ExpandBufnames(char *pat, int *num_file, char ***file, int options)
 
   // Make a copy of "pat" and change "^" to "\(^\|[\/]\)".
   if (*pat == '^') {
-    patc = xmalloc(strlen(pat) + 11);
+    patc = (char *)xmalloc(strlen(pat) + 11);
     STRCPY(patc, "\\(^\\|[\\/]\\)");
     STRCPY(patc + 11, pat + 1);
   } else {
@@ -2346,10 +2348,10 @@ int ExpandBufnames(char *pat, int *num_file, char ***file, int options)
         break;
       }
       if (round == 1) {
-        *file = xmalloc((size_t)count * sizeof(**file));
+        *file = (char **)xmalloc((size_t)count * sizeof(**file));
 
         if (options & WILD_BUFLASTUSED) {
-          matches = xmalloc((size_t)count * sizeof(*matches));
+          matches = (bufmatch_T *)xmalloc((size_t)count * sizeof(*matches));
         }
       }
     }
@@ -2434,7 +2436,7 @@ buf_T *buflist_findnr(int nr)
     nr = curwin->w_alt_fnum;
   }
 
-  return handle_get_buffer((handle_T)nr);
+  return (buf_T *)handle_get_buffer((handle_T)nr);
 }
 
 /// Get name of file 'n' in the buffer list.
@@ -2476,7 +2478,7 @@ void buflist_setfpos(buf_T *const buf, win_T *const win, linenr_T lnum, colnr_T 
   }
   if (wip == NULL) {
     // allocate a new entry
-    wip = xcalloc(1, sizeof(wininfo_T));
+    wip = (wininfo_T *)xcalloc(1, sizeof(wininfo_T));
     wip->wi_win = win;
     if (lnum == 0) {            // set lnum even when it's 0
       lnum = 1;
@@ -3033,7 +3035,7 @@ void fileinfo(int fullname, int shorthelp, int dont_truncate)
   char *buffer;
   size_t len;
 
-  buffer = xmalloc(IOSIZE);
+  buffer = (char *)xmalloc(IOSIZE);
 
   if (fullname > 1) {       // 2 CTRL-G: include buffer number
     vim_snprintf(buffer, IOSIZE, "buf %d: ", curbuf->b_fnum);
@@ -3440,6 +3442,7 @@ bool append_arg_number(win_T *wp, char *buf, int buflen, bool add_file)
 /// Note that the resulting "*ffname" pointer should be considered not allocated.
 void fname_expand(buf_T *buf, char **ffname, char **sfname)
 {
+  (void)buf;
   if (*ffname == NULL) {  // no file name given, nothing to do
     return;
   }

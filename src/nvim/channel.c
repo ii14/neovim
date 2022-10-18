@@ -810,9 +810,9 @@ static void term_close(void *data)
   multiqueue_put(chan->events, term_delayed_free, 1, data);
 }
 
-void channel_info_changed(Channel *chan, bool new)
+void channel_info_changed(Channel *chan, bool new_)
 {
-  event_T event = new ? EVENT_CHANOPEN : EVENT_CHANINFO;
+  event_T event = new_ ? EVENT_CHANOPEN : EVENT_CHANINFO;
   if (has_event(event)) {
     channel_incref(chan);
     multiqueue_put(main_loop.events, set_info_event,

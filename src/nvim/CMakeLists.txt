@@ -94,7 +94,7 @@ file(MAKE_DIRECTORY ${GENERATED_INCLUDES_DIR})
 file(MAKE_DIRECTORY ${LINT_SUPPRESSES_ROOT})
 file(MAKE_DIRECTORY ${LINT_SUPPRESSES_ROOT}/src)
 
-glob_wrapper(NVIM_SOURCES *.c)
+glob_wrapper(NVIM_SOURCES *.c *.cpp)
 glob_wrapper(NVIM_HEADERS *.h)
 glob_wrapper(EXTERNAL_SOURCES ../xdiff/*.c ../mpack/*.c ../cjson/*.c ../klib/*.c)
 glob_wrapper(EXTERNAL_HEADERS ../xdiff/*.h ../mpack/*.h ../cjson/*.h ../klib/*.h)

@@ -3,6 +3,10 @@
 
 /// change.c: functions related to changing text
 
+using _Bool = bool;
+#define restrict
+
+extern "C" {
 #include "nvim/assert.h"
 #include "nvim/buffer.h"
 #include "nvim/buffer_updates.h"
@@ -33,6 +37,7 @@
 #ifdef INCLUDE_GENERATED_DECLARATIONS
 # include "change.c.generated.h"
 #endif
+}
 
 /// If the file is readonly, give a warning message with the first change.
 /// Don't do this for autocommands.
@@ -377,10 +382,10 @@ void changed_bytes(linenr_T lnum, colnr_T col)
 /// insert/delete bytes at column
 ///
 /// Like changed_bytes() but also adjust extmark for "new" bytes.
-void inserted_bytes(linenr_T lnum, colnr_T col, int old, int new)
+void inserted_bytes(linenr_T lnum, colnr_T col, int old, int new_)
 {
   if (curbuf_splice_pending == 0) {
-    extmark_splice_cols(curbuf, (int)lnum - 1, col, old, new, kExtmarkUndo);
+    extmark_splice_cols(curbuf, (int)lnum - 1, col, old, new_, kExtmarkUndo);
   }
 
   changed_bytes(lnum, col);
@@ -683,7 +688,7 @@ void ins_char_bytes(char *buf, size_t charlen)
     }
   }
 
-  char *newp = xmalloc(linelen + newlen - oldlen);
+  char *newp = (char *)xmalloc(linelen + newlen - oldlen);
 
   // Copy bytes before the cursor.
   if (col > 0) {
@@ -742,7 +747,7 @@ void ins_str(char *s)
   char *oldp = ml_get(lnum);
   int oldlen = (int)strlen(oldp);
 
-  char *newp = xmalloc((size_t)oldlen + (size_t)newlen + 1);
+  char *newp = (char *)xmalloc((size_t)oldlen + (size_t)newlen + 1);
   if (col > 0) {
     memmove(newp, oldp, (size_t)col);
   }
@@ -857,7 +862,7 @@ int del_bytes(colnr_T count, bool fixpos_arg, bool use_delcombine)
     ml_add_deleted_len((char *)curbuf->b_ml.ml_line_ptr, oldlen);
     newp = oldp;                            // use same allocated memory
   } else {                                  // need to allocate a new line
-    newp = xmalloc((size_t)(oldlen + 1 - count));
+    newp = (char *)xmalloc((size_t)(oldlen + 1 - count));
     memmove(newp, oldp, (size_t)col);
   }
   memmove(newp + col, oldp + col + count, (size_t)movelen);
@@ -966,7 +971,7 @@ int copy_indent(int size, char *src)
       assert(ind_len + line_len >= 0);
       size_t line_size;
       STRICT_ADD(ind_len, line_len, &line_size, size_t);
-      line = xmalloc(line_size);
+      line = (char *)xmalloc(line_size);
       p = line;
     }
   }
@@ -1407,7 +1412,7 @@ int open_line(int dir, int flags, int second_line_indent, bool *did_do_comment)
                   + (second_line_indent > 0 ? second_line_indent : 0)
                   + 1;
       assert(bytes >= 0);
-      leader = xmalloc((size_t)bytes);
+      leader = (char *)xmalloc((size_t)bytes);
       allocated = leader;  // remember to free it later
 
       STRLCPY(leader, saved_line, lead_len + 1);

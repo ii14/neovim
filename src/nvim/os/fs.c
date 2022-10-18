@@ -953,12 +953,12 @@ int os_mkdir_recurse(const char *const dir, int32_t mode, char **const failed_di
 /// @param[out] path Path to created directory for success, undefined for
 ///                  failure.
 /// @return `0` for success, non-zero for failure.
-int os_mkdtemp(const char *template, char *path)
+int os_mkdtemp(const char *template_, char *path)
   FUNC_ATTR_NONNULL_ALL
 {
   uv_fs_t request;
   fs_loop_lock();
-  int result = uv_fs_mkdtemp(&fs_loop, &request, template, NULL);
+  int result = uv_fs_mkdtemp(&fs_loop, &request, template_, NULL);
   fs_loop_unlock();
   if (result == kLibuvSuccess) {
     xstrlcpy(path, request.path, TEMP_FILE_PATH_MAXLEN);

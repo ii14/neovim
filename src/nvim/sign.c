@@ -645,7 +645,7 @@ static int buf_findsign_id(buf_T *buf, linenr_T lnum, char *groupname)
 }
 
 /// Delete signs in buffer "buf".
-void buf_delete_signs(buf_T *buf, char *group)
+void buf_delete_signs(buf_T *buf, const char *group)
 {
   sign_entry_T *sign;
   sign_entry_T **lastp;  // pointer to pointer to current sign

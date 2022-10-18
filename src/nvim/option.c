@@ -1741,7 +1741,7 @@ void check_options(void)
 /// Return true when option "opt" was set from a modeline or in secure mode.
 /// Return false when it wasn't.
 /// Return -1 for an unknown option.
-int was_set_insecurely(win_T *const wp, char *opt, int opt_flags)
+int was_set_insecurely(win_T *const wp, const char *opt, int opt_flags)
 {
   int idx = findoption(opt);
 
@@ -5339,7 +5339,7 @@ char *skip_to_option_part(const char *p)
 /// @param[in]      sep_chars chars that separate the option parts
 ///
 /// @return length of `*option`
-size_t copy_option_part(char **option, char *buf, size_t maxlen, char *sep_chars)
+size_t copy_option_part(char **option, char *buf, size_t maxlen, const char *sep_chars)
 {
   size_t len = 0;
   char *p = *option;

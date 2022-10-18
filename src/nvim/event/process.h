@@ -37,9 +37,8 @@ static inline Process process_init(Loop *loop, ProcessType type, void *data)
 {
   return (Process) {
     .type = type,
-    .data = data,
     .loop = loop,
-    .events = NULL,
+    .data = data,
     .pid = 0,
     .status = -1,
     .refcount = 0,
@@ -50,10 +49,11 @@ static inline Process process_init(Loop *loop, ProcessType type, void *data)
     .out = { .closed = false },
     .err = { .closed = false },
     .cb = NULL,
-    .closed = false,
-    .internal_close_cb = NULL,
     .internal_exit_cb = NULL,
-    .detach = false
+    .internal_close_cb = NULL,
+    .closed = false,
+    .detach = false,
+    .events = NULL,
   };
 }
 
