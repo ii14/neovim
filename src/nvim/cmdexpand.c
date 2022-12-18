@@ -2811,12 +2811,34 @@ static int ExpandUserLua(expand_T *xp, int *num_file, char ***file)
 {
   typval_T rettv;
   nlua_call_user_expand_func(xp, &rettv);
-  if (rettv.v_type != VAR_LIST) {
+  list_T *retlist = rettv.vval.v_list;
+  long offset = -1;
+
+  if (rettv.v_type == VAR_LIST) {
+    retlist = rettv.vval.v_list;
+  } else if (rettv.v_type == VAR_DICT) {
+    // TODO(ii14): clean up memory
+    dictitem_T *const items = tv_dict_find(rettv.vval.v_dict, S_LEN("items"));
+    if (items == NULL || items->di_tv.v_type != VAR_LIST) {
+      tv_clear(&rettv);
+      return FAIL;
+    }
+    retlist = items->di_tv.vval.v_list;
+
+    dictitem_T *const offsetd = tv_dict_find(rettv.vval.v_dict, S_LEN("offset"));
+    if (offsetd != NULL) {
+      if (offsetd->di_tv.v_type != VAR_NUMBER) {
+        tv_clear(&rettv);
+        return FAIL;
+      }
+      offset = offsetd->di_tv.vval.v_number;
+    }
+
+    // TODO(ii14): fail on unknown keys
+  } else {
     tv_clear(&rettv);
     return FAIL;
   }
-
-  list_T *const retlist = rettv.vval.v_list;
 
   garray_T ga;
   ga_init(&ga, (int)sizeof(char *), 3);
@@ -2830,6 +2852,14 @@ static int ExpandUserLua(expand_T *xp, int *num_file, char ***file)
     GA_APPEND(char *, &ga, xstrdup((const char *)TV_LIST_ITEM_TV(li)->vval.v_string));
   });
   tv_list_unref(retlist);
+
+  if (offset > 0) {
+    const size_t len = strlen(xp->xp_pattern);
+    if ((size_t)offset > len) {
+      offset = (long)len;
+    }
+    xp->xp_pattern += offset;
+  }
 
   *file = ga.ga_data;
   *num_file = ga.ga_len;
